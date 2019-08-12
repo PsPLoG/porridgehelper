@@ -17,17 +17,18 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     MediaRecorder recorder;
+    AudioRecord audioRecord;
     String filename;
     MediaPlayer player;
     static boolean flag = true;
     int position = 0; // 다시 시작 기능을 위한 현재 재생 위치 확인 변수
     int time = 0;
+    int bufferSize = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,32 +75,25 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 flag = true;
-                Thread t = new Thread(new Runnable() {
+                startNoiseLevel();
+                final Runnable runnable = new Runnable() {
                     @Override
-                    public void run() { // UI 작업 수행 X
-                        while (flag) {
-                            mHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() { // UI 작업 수행 O
-                                    //((TextView) findViewById(R.id.mm)).setText(getNoiseLevel() + "");
+                    public void run() {
 
-                                }
-                            },500);
-                        }
+                        Log.d("asd", "loading" + getNoiseLevel());
+                        if (flag)
+                            mHandler.postDelayed(this, 1000);
                     }
-                });
-                t.start();
-
-                //recordAudio();
+                };
+                mHandler.post(runnable);
             }
         });
 
         findViewById(R.id.recordStop).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(),
-                        "죽 완성",
-                        Toast.LENGTH_SHORT).show();
+                audioRecord.stop();
+                audioRecord.release();
                 //stopRecording();
                 flag = false;
             }
@@ -138,39 +132,29 @@ public class MainActivity extends AppCompatActivity {
     String TAG = "test";
     public static double REFERENCE = 0.00002;
 
-    public double getNoiseLevel() {
+    public void startNoiseLevel() {
         Log.e(TAG, "start new recording process");
-        int bufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        bufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         Log.e(TAG, bufferSize + "");
-        bufferSize = 16000 * 4;
+        if (audioRecord == null)
+            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                    16000, AudioFormat.CHANNEL_IN_DEFAULT, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+        audioRecord.startRecording();
 
-        ByteArrayOutputStream mainBuffer = new ByteArrayOutputStream();
-        int minimumBufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        byte[] readBuffer = new byte[minimumBufferSize];
-        AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minimumBufferSize);
+    }
 
-        recorder.startRecording();
-        while (mainBuffer.size() < 32000) {
-            int bytesRead = recorder.read(readBuffer, 0, minimumBufferSize);
-            mainBuffer.write(readBuffer, 0, bytesRead);
+    public double getNoiseLevel() {
+        short data[] = new short[bufferSize];
+        double average = 0.0;
+        //recording data;
+        audioRecord.read(data, 0, bufferSize);
+        String tmp ="";
+        for(int i=0;i<data.length;i++)
+        {
+            tmp+= data[i]+" ";
         }
-
-        recorder.stop();
-        recorder.release();
-
-
-//        AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-//                44100, AudioFormat.CHANNEL_IN_DEFAULT, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
-//
-//        short data[] = new short[bufferSize];
-//        double average = 0.0;
-//        recorder.startRecording();
-//        //recording data;
-//        recorder.read(data, 0, bufferSize);
-//        recorder.stop();
-//
-//        Log.e(TAG, "stop");
+        Log.d("asd",data.length+"");
+        Log.d("asd",tmp);
 //        for (short s : data) {
 //            if (s > 0) {
 //                average += Math.abs(s);
@@ -181,8 +165,6 @@ public class MainActivity extends AppCompatActivity {
 //        //x=max;
 //        double x = average / bufferSize;
 //        Log.e(TAG, "" + x);
-//        recorder.release();
-//        Log.d(TAG, "getNoiseLevel() ");
 //        double db = 0;
 //        if (x == 0) {
 //            Log.e(TAG, "error x=0");
