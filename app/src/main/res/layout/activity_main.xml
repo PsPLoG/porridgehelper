@@ -9,7 +9,8 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="27dp"
-        android:text="재생" />
+        android:text="재생"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/pause"
@@ -18,7 +19,8 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="110dp"
-        android:text="일시정지" />
+        android:text="일시정지"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/restart"
@@ -27,7 +29,8 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="190dp"
-        android:text="재시작" />
+        android:text="재시작"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/stop"
@@ -36,7 +39,8 @@
         android:layout_below="@+id/restart"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="30dp"
-        android:text="정지" />
+        android:text="정지"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="wrap_content"
