@@ -14,6 +14,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,21 +23,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    ArrayList<Double> dataList = new ArrayList<>();
-    ArrayList<Double> dataList_p = new ArrayList<>();
-    MediaRecorder recorder;
-    AudioRecord audioRecord;
-    String filename;
-    MediaPlayer player;
-    static boolean flag = true;
-    int position = 0; // 다시 시작 기능을 위한 현재 재생 위치 확인 변수
-    int time = 0;
-    int bufferSize = 0;
-
-    int count = 0;
-    int THRE = 5; // 1-2단계
-    int THRE2 = 10; // 3단계
-    boolean data_type = true;
+    private ArrayList<Double> dataList = new ArrayList<>();
+    private ArrayList<Double> dataList_p = new ArrayList<>();
+    private MediaRecorder recorder;
+    private AudioRecord audioRecord;
+    private String filename;
+    private MediaPlayer player;
+    private TextView tvstate;
+    private ImageView mainImage;
+    private static boolean flag = true;
+    private int position = 0; // 다시 시작 기능을 위한 현재 재생 위치 확인 변수
+    private int bufferSize = 0;
+    private int count = 0;
+    private int THRE = 5; // 1-2단계
+    private int THRE2 = 10; // 3단계
+    private boolean data_type = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,17 +46,13 @@ public class MainActivity extends AppCompatActivity {
 
         permissionCheck();
 
+        tvstate = findViewById(R.id.mm);
+        mainImage = findViewById(R.id.iv_main);
+
         File sdcard = Environment.getExternalStorageDirectory();
         File file = new File(sdcard, "recorded.mp4");
         filename = file.getAbsolutePath();
-        Log.d("MainActivity", "저장할 파일 명 : " + filename);
-
-        findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                playAudio();
-            }
-        });
+        // Log.d("MainActivity", "저장할 파일 명 : " + filename);
 
         findViewById(R.id.pause).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,7 +79,9 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.record).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                flag = true;
+                mainImage.setImageResource(R.drawable.main_2);
+                tvstate.setText("1단계");
+               flag = true;
                 startNoiseLevel();
 
             }
@@ -93,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 audioRecord.stop();
                 audioRecord.release();
+                tvstate.setText("녹음대기중");
+                mainImage.setImageResource(R.drawable.main);
                 //stopRecording();
                 flag = false;
             }
@@ -176,17 +177,16 @@ public class MainActivity extends AppCompatActivity {
                 if (data_type) {
                     if (Math.abs(count) >= THRE) {
                         if (count < 0) { // 양수 --> 음수
-                            Toast.makeText(getApplicationContext(), "2단계", Toast.LENGTH_SHORT).show();
+                            tvstate.setText("2단계");
                             data_type = false;
                             count = 0;
                         } else if (count > 0) { // 음수 --> 양수
-                            Toast.makeText(getApplicationContext(), "1단계", Toast.LENGTH_SHORT).show();
+                            tvstate.setText("1 단계");
                         }
                     }
-                }
-                else{
-                    if (Math.abs(count) >= THRE2){
-                        Toast.makeText(getApplicationContext(), "3단계", Toast.LENGTH_SHORT).show();
+                } else {
+                    if (Math.abs(count) >= THRE2) {
+                        tvstate.setText("3 단계");
                     }
                 }
                 Log.d("sound ", "state" + state);
@@ -279,12 +279,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void playAudio() {
+    private void playAudio(String sound) {
         try {
             closePlayer();
 
             player = new MediaPlayer();
-            player.setDataSource(filename);
+            player.setDataSource(sound);
             player.prepare();
             player.start();
 
@@ -325,11 +325,6 @@ public class MainActivity extends AppCompatActivity {
             player.release();
             player = null;
         }
-    }
-
-    public void setTimeTextView(int second) {
-        ((TextView) findViewById(R.id.mm)).setText("" + second / 60);
-        ((TextView) findViewById(R.id.ss)).setText("" + second % 60);
     }
 
 
