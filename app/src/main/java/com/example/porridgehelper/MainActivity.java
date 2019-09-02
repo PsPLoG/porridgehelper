@@ -2,6 +2,8 @@ package com.example.porridgehelper;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
+import android.content.res.AssetManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaPlayer;
@@ -31,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private MediaPlayer player;
     private TextView tvstate;
     private ImageView mainImage;
-    private static boolean flag = true;
+    private static boolean flag = false;
     private int position = 0; // 다시 시작 기능을 위한 현재 재생 위치 확인 변수
     private int bufferSize = 0;
     private int count = 0;
@@ -79,9 +81,11 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.record).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (flag)
+                    return;
                 mainImage.setImageResource(R.drawable.main_2);
                 tvstate.setText("1단계");
-               flag = true;
+                flag = true;
                 startNoiseLevel();
 
             }
@@ -90,8 +94,11 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.recordStop).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(audioRecord==null )
+                    return;
                 audioRecord.stop();
                 audioRecord.release();
+                audioRecord=null;
                 tvstate.setText("녹음대기중");
                 mainImage.setImageResource(R.drawable.main);
                 //stopRecording();
@@ -178,15 +185,18 @@ public class MainActivity extends AppCompatActivity {
                     if (Math.abs(count) >= THRE) {
                         if (count < 0) { // 양수 --> 음수
                             tvstate.setText("2단계");
+                            playAudio("signal4.mp3");
                             data_type = false;
                             count = 0;
                         } else if (count > 0) { // 음수 --> 양수
                             tvstate.setText("1 단계");
+                            playAudio("signal4.mp3");
                         }
                     }
                 } else {
                     if (Math.abs(count) >= THRE2) {
                         tvstate.setText("3 단계");
+                        playAudio("signal4.mp3");
                     }
                 }
                 Log.d("sound ", "state" + state);
@@ -204,6 +214,8 @@ public class MainActivity extends AppCompatActivity {
         short data[] = new short[bufferSize];
         double average = 0.0;
         //recording data;
+        if(audioRecord==null)
+            return 0;
         audioRecord.read(data, 0, bufferSize);
 
 
@@ -283,10 +295,12 @@ public class MainActivity extends AppCompatActivity {
         try {
             closePlayer();
 
+            AssetFileDescriptor afd = getAssets().openFd(sound);
             player = new MediaPlayer();
-            player.setDataSource(sound);
+            player.setDataSource(afd.getFileDescriptor(),afd.getStartOffset(),afd.getLength());
             player.prepare();
             player.start();
+
 
             Toast.makeText(this, "재생 시작됨.", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
@@ -333,5 +347,10 @@ public class MainActivity extends AppCompatActivity {
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 1);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        System.exit(0);
     }
 }
